@@ -8,8 +8,8 @@ want to write their own add-ons, integration code, and other customizations.
 
 Basic Python and Plone knowledge is a prerequisite for understanding this documentation.
 
-Table of Content
-================
+Table of Contents
+=================
 
 .. toctree::
    :maxdepth: 2
