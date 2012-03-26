@@ -1,0 +1,392 @@
+===========================
+ Subclassing a Content Type
+===========================
+
+.. contents :: :local:
+
+.. admonition:: Description
+
+        QuickStart about subclassing a core Plone [Archetypes] Content Type
+        for customization.
+
+Introduction
+------------
+
+A very common desire for Plone developers and integrators is to build their
+own Content Type.  Often it is quickest and easiset to use the exisiting
+base Plone Content Types as a foundation and customize them to your liking, 
+rather than building one from scratch, although that's not out of the question!
+
+This QuickStart will quickly walk you through how to get your own custom
+type built using the Archetypes Content Type "News Item" as a base.  We're
+going to make an "Award" content type that adds a "Year" field, for the year
+the award was given.  We'll also customize the view and add CSS and Javascript
+resources to support it.
+
+
+Assumptions
+-----------
+
+For the purpose of this QuickStart, we'll assume a few things. First, that you
+already have Zope and Plone up and running, and that you're working locally.
+You should be able to get to the ZMI at http://localhost:8080 and have a Plone
+instance ready to go.  In our examples we'll assume this is called "Plone" and
+is available at http://localhost:8080/Plone
+
+Also, different people have Zope and Plone installed in different locations.
+You should know where your Zope Root directory is (where your 'eggs', 'parts', 
+'src', and 'var' directories are.)  In the examples, our command line paths will 
+start from this location.  There are also differing naming conventions for
+your start/stop scripts.  We'll use the conventions provided by the Unified
+Installer, and you'll have to translate if you've made your own buildout.
+
+For example, this code means that we're start Zope & Plone::
+
+    ./bin/plonectl start
+
+We also assume you have a familiarity with Buildout.  If not, take some time
+to :doc:`read this Buildout document </tutorials/buildout>`.
+
+We'll use Unix-style commands for our examples. Translating to Windows should
+be very straightforward.
+
+Finally, we'll be using ZopeSkel to accomplish our goal.  There's already a 
+great :doc:`tutorial on ZopeSkel </tutorials/paste>` which is recommended
+reading.
+
+
+Getting Started: ZopeSkel
+-------------------------
+
+OK, let's get going. First lets make sure Zope and Plone are stopped.::
+
+    ./bin/plonectl stop
+
+Check to see if you have ZopeSkel installed already by looking in your 'bin'
+directory for 'zopeskel'.  If it's not there, read the :doc:`ZopeSkel tutorial </tutorials/paste>`
+to learn how to add ZopeSkel and Paster to your buildout. Then re-run buildout 
+and come back here when you're done.
+
+When getting started building a new content type, the new package usually
+goes into the 'src' directory, which is where we're going to build our new
+package using ZopeSkel. Remember, we're building an 'Award' type based off
+of a News Item, and our package name will be 'example.award'. Let's try it::
+
+    cd src
+    ../bin/zopeskel archetype example.award
+
+You should be asked a few questions. Let's go over them.
+
+* Expert Mode? (What question mode would you like? (easy/expert/all)?) ['easy']: **all**
+
+* Project Title (Title of the project) ['Example Name']: **Example Award Content Type**
+
+* Namespace Package Name (Name of outer namespace package) ['example']: **example**
+
+* Package Name (Name of the inner namespace package) ['award']: **award**
+
+* Version (Version number for project) ['1.0']: **1.0**
+
+* Description (One-line description of the project) ['']: **A custom Award content type for Plone 4**
+
+* Register Profile (Should this package register a GS Profile) [True]: **True**
+
+* Long Description (Multi-line description (in ReST)) ['']: *Fill in a long ReST-like description if you like*
+
+* Author (Name of author for project) ['']: **Your Name Here**
+
+* Author Email (Email of author for project) ['']: **Your Email Here**
+
+* Keywords (List of keywords, space-separated) ['']: *add keywords if you wish*
+
+* Project URL (URL of the homepage for this project) ['http://svn.plone.org/svn/collective/']: *add a URL if you wish*
+
+* Project License (Name of license for the project) ['GPL']:  *Your flavor of license*
+
+* Zip-Safe? (Can this project be used as a zipped egg? (true/false)) [False]: **False**
+
+* Zope2 Product? (Are you creating a product for Zope2/Plone or an Archetypes Product?) [True]: **True**
+
+
+Adding the Content Type
+-----------------------
+
+What you have now is an empty shell that you could develop an Archetype
+Content Type, but there is no actual type defined.  Next you have to use 
+what's called a 'local command' to actually create the type.  First, move
+into the package directory and run the 'paster' local command::
+
+    cd example.award
+    ../../bin/paster addcontent contenttype award
+
+Once again you'll be asked a series of questions. Here are the questions
+and the suggested answers::
+
+* Enter contenttype_name (Content type name ) ['Example Type']: **Award**
+
+* Enter contenttype_description (Content type description ) ['Description of the Example Type']: **An Award Content Type**
+
+* Enter folderish (True/False: Content type is Folderish ) [False]: **False**
+
+* Enter global_allow (True/False: Globally addable ) [True]: **True**
+
+* Enter allow_discussion (True/False: Allow discussion ) [False]: **False** 
+
+And with that, you're done!  You should now have a directory in 'src' 
+named 'example.award' with a skeleton of an Archetypes Content Type
+in it, ready to be customized.  Before we can start with the
+customization, we have a few cleanup tasks. This particular ZopeSkel
+template is slightly outdated so we have to tweak it slightly.
+
+Move into your shiny new product and open 'setup.py' with your
+favorite editor.  I use emacs::
+
+    emacs setup.py
+
+At the bottom of this file you see the following two lines. Comment them out::
+
+    setup_requires=["PasteScript"],
+    paster_plugins=["ZopeSkel"],
+
+Now we can remove some extraneous directories that can create some
+weird problems you don't want to know about that are caused by the
+two lines we just commented out.  In your package directory, go ahead
+and delete all the directories that end in '.egg'::
+
+    rm -rf ./*.egg
+
+If you're working with a version control system like CVS, SVN, or git,
+you can add the product's 'egg-info' directory to the ignore file.
+It'll change a lot and doesn't belong in your repository.
+
+Adding the Type to Your Buildout
+--------------------------------
+
+Ok, now that you have your custom type, you'll need to add it to your
+buildout so that you can install it in Plone.  You can do this two
+ways.  You can add it to your main buildout, or if you have a policy
+(or other) product that installs dependencies, you can do it that
+way.  Since we're mostly focused on building the type and subclassing
+a base Archetype we'll skip the gory details of policy products and
+we'll just put it into your buildout.
+
+You'll need to add the product to the 'develop' section of your buildout.
+Depending on how you are built Plone this may be in different places, 
+but in the Unified Installer this section will either be in the
+standalone.cfg or cluster.cfg file.  Find the 'develop' section and add 
+the package like so::
+
+    develop = 
+        src/example.award
+
+Save the file and run buildout to get the package registered with Zope.::
+
+    bin/buildout
+
+While buildout runs, you should see that the package is pulled in.
+Now you're ready to start Zope and Plone and check to see if it was
+properly registered.  Start up Plone in the foreground sowe can see
+what's happening::
+
+    bin/plonectl fg
+
+When Zope tells you it's ready, open your browser and go to the ZMI:
+http://localhost:8080/Plone/manage_main  Click the portal_quickinstaller
+tool and you should see your package in the list of packages that
+are available to be installed.  (If you don't see it, it wasn't 
+registered with buildout properly.  Make sure that it's in the 
+proper 'develop' section of the active buildout and run buildout again.)
+
+So, if you've gotten this far you should have an installable package
+that could be installed, but we haven't done any of the customization
+yet, so hold off on installing it for now. Now let's get back into
+the package directory. There we can customize the package in order
+to subclass the News Item type and add our custom 'year' field.::
+
+    cd src/example.award/example/award
+
+Subclassing from Archetypes
+---------------------------
+
+Take a minute to look at what's in the directory and the subfolders.
+The ZopeSkel template that we used set all this up for you. The
+actual content type is defined in the 'content' folder.  There's a
+portlet folder if you want to define a portlet.  The browser folder is
+where you can put custom CSS, images, and Javascript. Finally of note
+is the 'profiles' directory where you can leverage Generic Setup to
+make changes.  We'll explore some of these directories shortly.
+
+First up, we need to make our Award Type subclass from a News Item. Let's
+go into the 'content' folder and open the 'award.py' file in your
+favorite editor.::
+
+    emacs content/award.py
+
+In there you'll see a bunch of code but we're only concerned with a
+few lines.  First let's import the News Item. Add this to the top in 
+the imports section.::
+
+    from Products.ATContentTypes.content.newsitem import ATNewsItem
+
+Now we're going to replace the schema definition. Replace the first
+line with the second line below::
+
+    AwardSchema = schemata.ATContentTypeSchema.copy() + atapi.Schema((
+
+    AwardSchema = ATNewsItem.schema.copy() + atapi.Schema((
+
+
+Adding More to the Schema
+-------------------------
+
+Now we're going to add a 'Year' field to the schema so we can tell
+what year the award was given. Add this field/widget definition to 
+the schema block below the line that reads::
+
+    # -*- Your Archetypes field definitions here ... -*-
+
+    StringField('year',
+                required=0,
+                widget=StringWidget(
+                    label='Year',
+                    description=u"The year this award was given",),
+                ),
+
+Next we need to use the supplied interface from a News Item.
+Go into the 'interfaces' directory, open the file 'award.py', and add
+the following line to the imports section::
+
+    from Products.ATContentTypes.interfaces.news import IATNewsItem
+
+Now change the class definition to use the interface we just imported:::
+
+    class IAward(IATNewsItem):
+
+Making a Custom View & Adding Resources
+---------------------------------------
+
+Save and close the file. At this point the content type is ready to 
+use, but we also want to make a custom view of this type so when
+users visit it, we can control the layout.  We'll also need to add a
+custom CSS file (and possibly Javascript). Let's take care of this now.
+
+First we'll need to add a skins directory where we'll put our
+custom view template then register it using ZCML.::
+
+    cd src/example.award/example/award/
+    mkdir skins
+
+In the configure.zcml file, add the following line::
+
+    <cmf:registerDirectory name="skins" directory="skins" recursive="True" />
+
+We're going to copy the default template for a News Item from Plone so 
+we can customize it to our liking.  For this we're going to have to get 
+the file from our eggs directory.  At the root of your Zope/Plone install, 
+go into the following directory::
+
+    eggs/Products-CMFPlone-4.1.4-py2.6.egg/Products/CMFPlone/skins/plone_content
+
+Copy the 'newsitem_view.pt' file into the skins directory of your new
+package.  Then rename it to "award_view.pt".  Now we need to tell
+our type to use this template.  Let's go back to your package in the 
+'src' directory::
+
+    cd src/example.award/example/award/
+
+Then move into the Generic Setup 'profiles' folder and edit the type definition, 
+telling it to use this new template::
+
+    cd profiles/default/types
+    emacs Award.xml
+
+In there, change the following property to the name of the template
+we just copied.::
+
+    <property name="default_view">award_view</property>
+
+Now when you view an Award content item, it'll use this template. Now we
+need to add the "year" field to this view.  Go ahead and open the file
+"award_view.pt" that we added to the skins directory.  Add the following
+to that file::
+
+    <p tal:condition="here/year">
+        Year: <span tal:replace="here/year">YEAR</span>
+    </p>
+
+Now when you view this type, the year will also be listed. Finally we may 
+want some CSS or Javascript to style this view.  First let's add a
+CSS and Javascript directory to the 'browser' directory.::
+
+    cd src/example.award/example/award/browser
+    mkdir css
+    mkdir js
+
+Then we need to register them using ZCML. Open 'configure.zcml' and
+add the following, between the <configure> tags.::
+
+    <browser:resourceDirectory
+        name="example.award.css"
+        directory="browser/css"
+    />
+
+    <browser:resourceDirectory
+        name="example.award.js"
+        directory="browser/js"
+    />
+
+Next we need to be sure that these resource directories are registered
+with Plone's Resource Registries. We do this using Generic Setup. Move
+into our package's default profile directory, and add two files 'jsregistry.xml'
+and 'cssregistry.xml'. Open cssregistry.xml and add the following::
+
+    <?xml version="1.0"?>    
+    <object name="portal_css">
+     <stylesheet title="Example Award Styles"
+        id="++resource++example.award.css/award.css" media="screen" 
+        rel="stylesheet" rendering="import" cacheable="True"
+        compression="safe" cookable="True" enabled="1"/>
+    </object>
+
+We need to add something similar to jsregistry.xml::
+
+    <?xml version="1.0"?>
+    <object name="portal_javascripts">
+     <javascript
+        id="++resource++example.award.js/award.js"
+        cacheable="False" compression="safe" cookable="False"
+        enabled="True" inline="False"/>
+    </object>
+
+Next we need to add files to satisfy these definitions. In the directory
+'browser/js' add an empty file called 'award.js' and in 'browser/css' add
+and empty file called 'award.css'.
+
+Enjoy
+-----
+
+Now that you've done all this, fire up your Plone, go to the portal
+quickinstaller and install the product.  Then when you visit your Plone,
+you should be able to add your new content type using the "Add Content" 
+dropdown menu. When you do this, there should be a new "year" field in 
+the edit view. When you save it, the view should be using your custom view, and you
+should see the Year field displayed on the page!
+
+Congrats, you did it!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

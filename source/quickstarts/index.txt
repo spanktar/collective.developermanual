@@ -1,0 +1,25 @@
+Plone QuickStarts
+============================================
+
+These QuickStart guides are designed to get you productive in a particular
+core functionality of Plone without a lot of jargon, theory, or in-depth
+background information.  Instead, we give you a straightforward bulletproof
+process that (hopefully) follows current best-practices to get you on 
+you way.
+
+Where possible, we'll link out to more detailed documentation where you can
+learn what's really going on behind these guides.  It is your responsibility
+to follow up on what you've done here and learn the core concepts.  These
+QuickStarts are geared toward someone approaching Plone who wants to 
+accomplish certain basic tasks quickly and learn by example, and are not a
+substitute for your journey towards mastering the concepts.
+
+And with that, let's get started...
+
+.. toctree::
+   :maxdepth: 1
+   
+   installation
+   contenttypes
+   overriding
+   forms

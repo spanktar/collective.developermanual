@@ -16,6 +16,7 @@ Table of Contents
 
    introduction/index
    tutorials/index
+   quickstarts/index
    serving/index
    views/index
    content/index
